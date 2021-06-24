@@ -1,6 +1,5 @@
 from tkinter import *
 from operations import operators
-import pdb
 
 BUTTON_WIDTH = 6
 BUTTON_HEIGHT = 2
@@ -12,13 +11,13 @@ INV = 0
 
 answer = ""
 
-all_operators = ["+", "÷", "x", "-", "x^2", "x^y", "!", "e", "π", "√", "%", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin(-1)", "cos(-1)", "tan(-1)"]
+all_operators = ["+", "÷", "x", "-", "x^2", "x^y", "!", "e", "π", "√", "%", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1("]
 basic_operators = ["+", "÷", "x", "-"]
 x_both = ["e", "π"]
 x_right = ["!", ")", "x^2", "%"]
-x_left = ["√", "(", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin(-1)", "cos(-1)", "tan(-1)"]
+x_left = ["√", "(", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1("]
 no_x = ["x^y"]
-with_open_bracket = ["ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin(-1)", "cos(-1)", "tan(-1)", "x^y"]
+with_open_bracket = ["ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1(", "x^y"]
 # i think for the the bracket everything after the bracket should be in a list and a closing bracket should terminate
 # the list
 # if the length of the answer is longer than 20 characters then it should be converted to standard form
@@ -91,17 +90,61 @@ solving = SOLVE_LIST.copy()
 format_list(solving)
 
 
-def solve():
+def solve(solving_):
     global answer
     # for handling brackets once an open bracket is spotted then everything after it is in the bracket and must be treated first
     max_rank = 0
-    for index, char in enumerate(solving):
+    open_bracket_index = None
+    close_bracket_index = None
+    after_bracket = []
+    for index, char in enumerate(solving_):
         if char in all_operators:
             if operators[char]["rank"] > max_rank:
                 max_rank = operators[char]["rank"]
+        elif char == "(":
+            open_bracket_index = index
+        elif char == ")":
+            close_bracket_index = index
+
+    bracket_answer = ""
+    if open_bracket_index is not None:
+        if close_bracket_index is not None:
+            for char in solving_[open_bracket_index+1:close_bracket_index]:
+                after_bracket.append(char)
+            bracket_answer = solve(after_bracket)
+            if bracket_answer is None:
+                try:
+                    bracket_answer = after_bracket[0]
+                except IndexError:
+                    pass
+            for _ in range(open_bracket_index+1, close_bracket_index+1):
+                try:
+                    solving_.pop(open_bracket_index+1)
+                except IndexError:
+                    pass
+            solving_[open_bracket_index] = bracket_answer
+        else:
+            for char in solving_[open_bracket_index + 1:]:
+                after_bracket.append(char)
+            bracket_answer = solve(after_bracket)
+            if bracket_answer is None:
+                if len(after_bracket) > 0:
+                    bracket_answer = after_bracket[0]
+            for _ in solving_[open_bracket_index + 1:]:
+                solving_.pop()
+            if len(after_bracket) == 0:
+                bracket_answer = "Error"
+                solving_[open_bracket_index] = bracket_answer
+            solving_[open_bracket_index] = bracket_answer
+    else:
+        if close_bracket_index is not None:
+            bracket_answer = "Error"
+            solving_[close_bracket_index] = bracket_answer
+
+    solving_label.config(text=str(bracket_answer))
 
     max_operation_tup = []
-    for index, char in enumerate(solving):
+    for index, char in enumerate(solving_):
         if char in all_operators:
             if operators[char]["rank"] == max_rank:
                 max_operation_tup.append((index, char))
@@ -114,11 +157,11 @@ def solve():
             if index == 0:
                 num_before = ""
             else:
-                num_before = solving[index-1]
+                num_before = solving_[index - 1]
         except IndexError:
             num_before = ""
         try:
-            num_after = solving[index + 1]
+            num_after = solving_[index + 1]
         except IndexError:
             num_after = ""
         answer_tup = operation(num1=num_before, num2=num_after)
@@ -130,40 +173,42 @@ def solve():
             # check the tuple returned to know if it was the num before or num after that was used for the operation
             # 1 means that the num before the sign was used while -1 means that the num after the sign was used
             if len(answer_tup) == 1:
-                solving[index] = str(answer_)
+                solving_[index] = str(answer_)
                 try:
-                    solving.pop(index + 1)
+                    solving_.pop(index + 1)
                 except IndexError:
                     pass
-                solving.pop(index - 1)
+                solving_.pop(index - 1)
             else:  # in case of a bug i changed all the 0 for errors to the num used
                 if answer_tup[-1] == 0:
-                    solving[index] = str(answer_)
+                    solving_[index] = str(answer_)
                 elif answer_tup[-1] == 1:
-                    solving[index] = str(answer_)
-                    if len(solving) > 0:
-                        solving.pop(index - 1)
+                    solving_[index] = str(answer_)
+                    if len(solving_) > 0:
+                        solving_.pop(index - 1)
                 else:
-                    solving[index] = str(answer_)
-                    if len(solving) > 1:
-                        solving.pop(index + 1)
+                    solving_[index] = str(answer_)
+                    if len(solving_) > 1:
+                        solving_.pop(index + 1)
 
         # it has to remove the sign from
         else:
             answer_ = num_before   # here in case of answer bug
             if num_after == "" or num_after == "-":
-                solving.pop(index)
+                solving_.pop(index)
 
-        num_of_operations = [operator for operator in solving if operator in all_operators]
+        num_of_operations = [operator for operator in solving_ if operator in all_operators]
         # if there are still any more operations repeat the solving process
         if len(num_of_operations) > 0:
-            solve()
+            solve(solving_)
         else:
             # if it is not an error the previous answer should be displayed when it is a basic operation
             answer = answer_
+            print(answer_, "answer")
             # if answer_ != "Error":
             #     answer = answer_
             solving_label.config(text=str(answer_))
+            return answer_
 
 
 def num_command_holder(n):
@@ -176,7 +221,7 @@ def num_command_holder(n):
         print(solving, "copy")
         format_list(solving)
         print(solving, "formatted")
-        solve()
+        solve(solving)
     return command_
 
 
@@ -194,7 +239,7 @@ def command(solve_sign, display_sign):
     format_list(solving)
     print(solving, "formatted")
     user_input.config(text="".join(DISPLAY_LIST))
-    solve()
+    solve(solving)
 
 
 def add_command():
@@ -304,15 +349,15 @@ def inv_log_command():
 
 
 def inv_sin_command():
-    command("sin(-1)", "sin(-1)")
+    command("sin–1(", "sin-1(")
 
 
 def inv_cos_command():
-    command("cos(-1)", "cos(-1)")
+    command("cos–1(", "cos–1(")
 
 
 def inv_tan_command():
-    command("tan(-1)", "tan(-1)")
+    command("tan–1(", "tan–1(")
 
 
 def rad_deg_command():
@@ -378,7 +423,7 @@ def delete_command():
         print(solving, "formatted")
         user_input.config(text="".join(DISPLAY_LIST))
         solving_label.config(text="")
-        solve()
+        solve(solving)
 
 
 # ----------------GUI Setup----------------------- #

@@ -50,9 +50,15 @@ def subtract(num1, num2):
 def multiply(num1, num2):
     try:
         try:
-            product = round(int(num1) * int(num2), 6)
+            try:
+                product = round(int(num1) * int(num2), 6)
+            except TypeError:
+                return "Error",
         except ValueError:
-            product = round(float(num1) * float(num2), 6)
+            try:
+                product = round(float(num1) * float(num2), 6)
+            except TypeError:
+                return "Error",
         return product,
     except ValueError:
         if num1 == "Error" or num2 == "Error":
@@ -308,9 +314,9 @@ operators = {
     "tan": {"operation": tan, "rank": 3},
     "e^x": {"operation": inv_natural_log, "rank": 3},
     "10^x": {"operation": inv_log, "rank": 3},
-    "sin(-1)": {"operation": inv_sin, "rank": 3},
-    "cos(-1)": {"operation": inv_cos, "rank": 3},
-    "tan(-1)": {"operation": inv_tan, "rank": 3},
+    "sin–1(": {"operation": inv_sin, "rank": 3},
+    "cos–1(": {"operation": inv_cos, "rank": 3},
+    "tan–1(": {"operation": inv_tan, "rank": 3},
     #"(": {"operation": open_bracket, "rank": 4},
     #")": {"operation": close_bracket, "rank": 4},
 }
