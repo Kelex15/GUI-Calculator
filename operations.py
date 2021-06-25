@@ -1,16 +1,24 @@
 import math
 
-# in case of a bug i changed all the 0 for errors to the num used
 with open("rad_deg.txt", "w") as f:
     f.write("1")
 
 
 def read_rad_deg():
-    with open("rad_deg.txt", "r") as f:
-        return int(f.read())
+    """
+    Reads the data from the rad_deg text file
+    :return: int
+    """
+    with open("rad_deg.txt", "r") as file:
+        return int(file.read())
 
 
 def check_to_int(value_to_check):
+    """
+    Checks if a number is the form num.0 which would be converted to an int else left as it is
+    :param value_to_check: int or float
+    :return: int or float
+    """
     try:
         if str(value_to_check)[-1] == "0" and str(value_to_check)[-2] == ".":
             return int(value_to_check)
@@ -22,9 +30,9 @@ def check_to_int(value_to_check):
 def add(num1, num2):
     try:
         try:
-            sum_ = round(int(num1) + int(num2), 6)
+            sum_ = int(num1) + int(num2)
         except ValueError:
-            sum_ = round(float(num1) + float(num2), 6)
+            sum_ = float(num1) + float(num2)
         return sum_,
     except ValueError:
         if num1 == "Error" or num2 == "Error":
@@ -36,9 +44,9 @@ def add(num1, num2):
 def subtract(num1, num2):
     try:
         try:
-            difference = round(int(num1) - int(num2), 6)
+            difference = int(num1) - int(num2)
         except ValueError:
-            difference = round(float(num1) - float(num2), 6)
+            difference = float(num1) - float(num2)
         return difference,
     except ValueError:
         if num1 == "Error" or num2 == "Error":
@@ -51,12 +59,12 @@ def multiply(num1, num2):
     try:
         try:
             try:
-                product = round(int(num1) * int(num2), 6)
+                product = int(num1) * int(num2)
             except TypeError:
                 return "Error",
         except ValueError:
             try:
-                product = round(float(num1) * float(num2), 6)
+                product = float(num1) * float(num2)
             except TypeError:
                 return "Error",
         return product,
@@ -70,9 +78,9 @@ def multiply(num1, num2):
 def divide(num1, num2):
     try:
         try:
-            quotient = round(int(num1) / int(num2), 6)
+            quotient = int(num1) / int(num2)
         except ValueError:
-            quotient = round(float(num1) / float(num2), 6)
+            quotient = float(num1) / float(num2)
         return check_to_int(quotient),
     except ValueError:
         if num1 == "Error" or num2 == "Error":
@@ -295,14 +303,15 @@ def inv_tan(num1, num2):
         return "Error", -1
 
 
+# Dictionary of all the signs and their various operations and ranks
 operators = {
     "+": {"operation": add, "rank": 1},
     "-": {"operation": subtract, "rank": 1},
     "x": {"operation": multiply, "rank": 2},
-    "÷": {"operation": divide, "rank": 3},
+    "÷": {"operation": divide, "rank": 2},
     "e": {"operation": exponent, "rank": 3.5},
     "π": {"operation": pi, "rank": 3.5},
-    "√": {"operation": square_root, "rank": 3},  # change rank to 3
+    "√": {"operation": square_root, "rank": 3},
     "%": {"operation": percent, "rank": 3},
     "!": {"operation": factorial, "rank": 3},
     "x^2": {"operation": x_square, "rank": 3},
@@ -317,21 +326,21 @@ operators = {
     "sin–1(": {"operation": inv_sin, "rank": 3},
     "cos–1(": {"operation": inv_cos, "rank": 3},
     "tan–1(": {"operation": inv_tan, "rank": 3},
-    #"(": {"operation": open_bracket, "rank": 4},
-    #")": {"operation": close_bracket, "rank": 4},
 }
 
 
-class BasicOperation:
-    def __init__(self, sign, rank):
-        self.sign = sign
-        self.rank = rank
+# Kept for later analysis
 
-    def perform_operation(self, num_before, num_after, operation):
-        return operation(num_before, num_after)
-
-
-class OtherOperations:
-    def __init__(self, sign, rank):
-        self.sign = sign
-        self.rank = rank
+# class BasicOperation:
+#     def __init__(self, sign, rank):
+#         self.sign = sign
+#         self.rank = rank
+#
+#     def perform_operation(self, num_before, num_after, operation):
+#         return operation(num_before, num_after)
+#
+#
+# class OtherOperations:
+#     def __init__(self, sign, rank):
+#         self.sign = sign
+#         self.rank = rank
