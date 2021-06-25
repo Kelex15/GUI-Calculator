@@ -29,7 +29,10 @@ def to_standard_form(num_to_convert):
     :param num_to_convert: int or float
     :return: str
     """
-    return "{:.5g}".format(num_to_convert)
+    try:
+        return "{:.5g}".format(num_to_convert)
+    except OverflowError:
+        return "Error Too Large"
 
 
 def format_list(solving_list: list):
@@ -113,15 +116,11 @@ def solve(solving_: list):
     # For handling brackets once an open bracket is spotted then everything after it is in the bracket and must be
     # treated first
     # Also get the highest rank
-    max_rank = 0
     open_bracket_index = None
     close_bracket_index = None
     after_bracket = []
     for index, char in enumerate(solving_):
-        if char in ALL_OPERATORS:
-            if operators[char]["rank"] > max_rank:
-                max_rank = operators[char]["rank"]
-        elif char == "(":
+        if char == "(":
             open_bracket_index = index
         elif char == ")":
             close_bracket_index = index
@@ -146,7 +145,7 @@ def solve(solving_: list):
                     solving_.pop(open_bracket_index+1)
                 except IndexError:
                     pass
-            solving_[open_bracket_index] = bracket_answer
+            solving_[open_bracket_index] = str(bracket_answer)
         else:
             for char in solving_[open_bracket_index + 1:]:
                 after_bracket.append(char)
@@ -158,16 +157,20 @@ def solve(solving_: list):
                 solving_.pop()
             if len(after_bracket) == 0:
                 bracket_answer = "Error"
-                solving_[open_bracket_index] = bracket_answer
-            solving_[open_bracket_index] = bracket_answer
+                solving_[open_bracket_index] = str(bracket_answer)
+            solving_[open_bracket_index] = str(bracket_answer)
     else:
         if close_bracket_index is not None:
             bracket_answer = "Error"
             solving_[close_bracket_index] = bracket_answer
+
     try:
         poss = [len(bracket_answer) > MAX_ANSWER_LENGTH, bracket_answer is not None]
     except TypeError:
-        poss = [bracket_answer > MAX_ANSWER_LENGTH, bracket_answer is not None]
+        try:
+            poss = [bracket_answer > MAX_ANSWER_LENGTH, bracket_answer is not None]
+        except TypeError:
+            poss = [bracket_answer is not None]
     if all(poss):
         try:
             solving_label.config(text=str(to_standard_form(int(bracket_answer))))
@@ -176,6 +179,11 @@ def solve(solving_: list):
     else:
         solving_label.config(text=str(bracket_answer))
 
+    max_rank = 0
+    for index, char in enumerate(solving_):
+        if char in ALL_OPERATORS:
+            if operators[char]["rank"] > max_rank:
+                max_rank = operators[char]["rank"]
     # Get the operation with the max rank and it's index (The list is going to contain only one item)
     max_operation_tup = []
     for index, char in enumerate(solving_):
@@ -231,7 +239,10 @@ def solve(solving_: list):
 
         # it has to remove the sign (it is a basic operator) from the solving list to prevent recursion
         else:
-            answer_ = num_before
+            try:
+                answer_ = int(num_before)
+            except ValueError:
+                answer_ = float(num_before)
             if num_after == "" or num_after == "-":
                 solving_.pop(index)
 
@@ -340,7 +351,9 @@ def pi_command():
 
 def decimal_point_command():
     try:
-        if "." not in solving[-1]:
+        check = SOLVE_LIST.copy()
+        format_list(check)
+        if "." not in check[-1]:
             command(".", ".")
     except IndexError:
         command(".", ".")
