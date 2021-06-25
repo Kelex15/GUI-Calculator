@@ -18,14 +18,10 @@ x_right = ["!", ")", "x^2", "%"]
 x_left = ["√", "(", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1("]
 no_x = ["x^y"]
 with_open_bracket = ["ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1(", "x^y"]
-# i think for the the bracket everything after the bracket should be in a list and a closing bracket should terminate
-# the list
 # if the length of the answer is longer than 20 characters then it should be converted to standard form
 
 
 def format_list(solving_list):
-    # you don't have to return anything the format function formats the list inplace
-
     for index, char in enumerate(solving_list):
         if char.isdigit() or "." in char:
             try:
@@ -378,9 +374,9 @@ def inv_command():
     if INV % 2 == 1:
         natural_log_button.config(text="e^x", command=inv_natural_log_command)
         log_button.config(text="10^x", command=inv_log_command)
-        sin_button.config(text="sin(-1)", command=inv_sin_command)
-        cos_button.config(text="cos(-1)", command=inv_cos_command)
-        tan_button.config(text="tan(-1)", command=inv_tan_command)
+        sin_button.config(text="sin–1(", command=inv_sin_command)
+        cos_button.config(text="cos–1(", command=inv_cos_command)
+        tan_button.config(text="tan–1(", command=inv_tan_command)
     else:
         natural_log_button.config(text="ln", command=natural_log_command)
         log_button.config(text="log", command=log_command)
