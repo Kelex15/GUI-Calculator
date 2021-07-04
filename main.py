@@ -13,6 +13,7 @@ X_LEFT = ["√", "(", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(
 NO_X = ["x^y"]
 WITH_OPEN_BRACKETS = ["ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1(", "x^y"]
 MAX_ANSWER_LENGTH = 10
+DISPLAY_FORMAT = "{:,.10g}"
 
 # Global Variables
 DISPLAY_LIST = []
@@ -30,7 +31,7 @@ def to_standard_form(num_to_convert):
     :return: str
     """
     try:
-        return "{:.5g}".format(num_to_convert)
+        return "{:,.5g}".format(num_to_convert)
     except OverflowError:
         return "Error Too Large"
 
@@ -177,7 +178,13 @@ def solve(solving_: list):
         except ValueError:
             solving_label.config(text=str(to_standard_form(float(bracket_answer))))
     else:
-        solving_label.config(text=str(bracket_answer))
+        try:
+            solving_label.config(text=DISPLAY_FORMAT.format(int(bracket_answer)))
+        except ValueError:
+            try:
+                solving_label.config(text=DISPLAY_FORMAT.format(float(bracket_answer)))
+            except ValueError:
+                solving_label.config(text=str(bracket_answer))
 
     max_rank = 0
     for index, char in enumerate(solving_):
@@ -256,7 +263,14 @@ def solve(solving_: list):
             if len(str(answer_)) > MAX_ANSWER_LENGTH and answer_ != "Error":
                 solving_label.config(text=str(to_standard_form(answer_)))
             else:
-                solving_label.config(text=str(answer_))
+                try:
+                    solving_label.config(text=DISPLAY_FORMAT.format(int(str(answer_))))
+                except ValueError:
+                    try:
+                        solving_label.config(text=DISPLAY_FORMAT.format(float(str(answer_))))
+                    except ValueError:
+                        solving_label.config(text=str(answer_))
+                # solving_label.config(text=str(answer_))
             return answer_
 
 
