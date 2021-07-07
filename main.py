@@ -24,7 +24,7 @@ INV = 0
 answer = ""
 
 
-def to_standard_form(num_to_convert):
+def to_standard_form(num_to_convert) -> str:
     """
     Converts the number to standard form
     :param num_to_convert: int or float
