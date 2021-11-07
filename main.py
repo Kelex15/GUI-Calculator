@@ -1,5 +1,11 @@
-from tkinter import *
 from operations import operators
+from tkinter import *
+from util import Stack, parse, to_standard_form
+
+
+"""
+debug "5!!"
+"""
 
 # Global Constants
 BUTTON_WIDTH = 6
@@ -7,6 +13,9 @@ BUTTON_HEIGHT = 2
 ALL_OPERATORS = ["+", "÷", "x", "-", "x^2", "x^y", "!", "e", "π", "√", "%", "ln", "log", "sin", "cos", "tan", "e^x",
                  "10^x", "sin–1(", "cos–1(", "tan–1("]
 BASIC_OPERATORS = ["+", "÷", "x", "-"]
+BINARY_OPERATORS = ["+", "÷", "x", "-", "x^y"]
+UNARY_OPERATORS = ["x^2", "!", "√", "%", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1("]
+SINGLE_OPERATORS = ["e", "π"]
 X_BOTH = ["e", "π"]
 X_RIGHT = ["!", ")", "x^2", "%"]
 X_LEFT = ["√", "(", "ln", "log", "sin", "cos", "tan", "e^x", "10^x", "sin–1(", "cos–1(", "tan–1("]
@@ -22,18 +31,6 @@ with open("rad_deg.txt", "r") as f:
     RAD_DEG = int(f.read())
 INV = 0
 answer = ""
-
-
-def to_standard_form(num_to_convert) -> str:
-    """
-    Converts the number to standard form
-    :param num_to_convert: int or float
-    :return: str
-    """
-    try:
-        return "{:,.5g}".format(num_to_convert)
-    except OverflowError:
-        return "Error Too Large"
 
 
 def format_list(solving_list: list):
@@ -93,7 +90,9 @@ def format_list(solving_list: list):
                 pass
         if char in X_RIGHT:
             try:
-                if solving_list[index+1] not in BASIC_OPERATORS and solving_list[index + 1] not in X_RIGHT:
+                poss = [solving_list[index+1] not in BASIC_OPERATORS and solving_list[index + 1] not in X_RIGHT,
+                        solving_list[index+1] not in NO_X]
+                if all(poss):
                     solving_list.insert(index+1, "x")
                     index -= 1
             except IndexError:
@@ -103,175 +102,50 @@ def format_list(solving_list: list):
 
 
 solving = SOLVE_LIST.copy()
-format_list(solving)
 
 
-def solve(solving_: list):
-    """
-    Executes the list and returns the result.
-    :param solving_: a formatted list of operations to be executed.
-    :return: the answer after executing the formatted list.
-    """
-
+def solve(solving_):
     global answer
-    # For handling brackets once an open bracket is spotted then everything after it is in the bracket and must be
-    # treated first
-    # Also get the highest rank
-    open_bracket_index = None
-    close_bracket_index = None
-    after_bracket = []
-    for index, char in enumerate(solving_):
-        if char == "(":
-            open_bracket_index = index
-        elif char == ")":
-            close_bracket_index = index
 
-    bracket_answer = ""
-    if open_bracket_index is not None:
-        if close_bracket_index is not None:
-            for char in solving_[open_bracket_index+1:close_bracket_index]:
-                after_bracket.append(char)
-            bracket_answer = solve(after_bracket)
-            # if the bracket answer is none it is probably because there is only one item in the after bracket
-            # (which is probably a number)> The bracket answer should be replaced by the item
-            if bracket_answer is None:
-                try:
-                    bracket_answer = after_bracket[0]
-                except IndexError:
-                    pass
-            # remove everything after the open bracket to the close bracket inclusive and replace the open bracket with
-            # the bracket answer
-            for _ in range(open_bracket_index+1, close_bracket_index+1):
-                try:
-                    solving_.pop(open_bracket_index+1)
-                except IndexError:
-                    pass
-            solving_[open_bracket_index] = str(bracket_answer)
-        else:
-            for char in solving_[open_bracket_index + 1:]:
-                after_bracket.append(char)
-            bracket_answer = solve(after_bracket)
-            if bracket_answer is None:
-                if len(after_bracket) > 0:
-                    bracket_answer = after_bracket[0]
-            for _ in solving_[open_bracket_index + 1:]:
-                solving_.pop()
-            if len(after_bracket) == 0:
-                bracket_answer = "Error"
-                solving_[open_bracket_index] = str(bracket_answer)
-            solving_[open_bracket_index] = str(bracket_answer)
-    else:
-        if close_bracket_index is not None:
-            bracket_answer = "Error"
-            solving_[close_bracket_index] = bracket_answer
+    parsed_list = parse(solving_)
 
-    try:
-        poss = [len(bracket_answer) > MAX_ANSWER_LENGTH, bracket_answer is not None]
-    except TypeError:
-        try:
-            poss = [bracket_answer > MAX_ANSWER_LENGTH, bracket_answer is not None]
-        except TypeError:
-            poss = [bracket_answer is not None]
-    if all(poss):
-        try:
-            solving_label.config(text=str(to_standard_form(int(bracket_answer))))
-        except ValueError:
-            solving_label.config(text=str(to_standard_form(float(bracket_answer))))
-    else:
-        try:
-            solving_label.config(text=DISPLAY_FORMAT.format(int(bracket_answer)))
-        except ValueError:
+    if len(solving_) < 1:
+        return
+    s = Stack()
+    for char in parsed_list:
+        if char in BINARY_OPERATORS:
             try:
-                solving_label.config(text=DISPLAY_FORMAT.format(float(bracket_answer)))
-            except ValueError:
-                solving_label.config(text=str(bracket_answer))
-
-    max_rank = 0
-    for index, char in enumerate(solving_):
-        if char in ALL_OPERATORS:
-            if operators[char]["rank"] > max_rank:
-                max_rank = operators[char]["rank"]
-    # Get the operation with the max rank and it's index (The list is going to contain only one item)
-    max_operation_tup = []
-    for index, char in enumerate(solving_):
-        if char in ALL_OPERATORS:
-            if operators[char]["rank"] == max_rank:
-                max_operation_tup.append((index, char))
-                break
-
-    for tup in max_operation_tup:
-        index, operation_sign = tup
-        operation = operators[operation_sign]["operation"]
-        try:
-            if index == 0:
-                num_before = ""
-            else:
-                num_before = solving_[index - 1]
-        except IndexError:
-            num_before = ""
-        try:
-            num_after = solving_[index + 1]
-        except IndexError:
-            num_after = ""
-        answer_tup = operation(num1=num_before, num2=num_after)
-
-        # if the answer is not None then the operation is not a basic operation
-        if answer_tup is not None:
-            answer_ = answer_tup[0]
-            # check the tuple returned to know if it was the num before or num after that was used for the operation
-            # 1 means that the num before the sign was used while -1 means that the num after the sign was used
-            # 0 means that neither num before or num after was used. If the length is 1 then both num before and num
-            # after were used
-            if len(answer_tup) == 1:
-                solving_[index] = str(answer_)
-                try:
-                    solving_.pop(index + 1)
-                except IndexError:
-                    pass
-                solving_.pop(index - 1)
-            else:
-                if answer_tup[-1] == 0:
-                    solving_[index] = str(answer_)
-                elif answer_tup[-1] == 1:
-                    solving_[index] = str(answer_)
-                    if len(solving_) > 0:
-                        try:
-                            solving_.pop(index - 1)
-                        except IndexError:
-                            pass
-                else:
-                    solving_[index] = str(answer_)
-                    if len(solving_) > 1:
-                        solving_.pop(index + 1)
-
-        # it has to remove the sign (it is a basic operator) from the solving list to prevent recursion
-        else:
+                num2 = s.pop()
+                num1 = s.pop()
+                s.push(str(operators[char]["operation"](num1, num2)))
+            except Exception as e:
+                print(f"[Exception] {e}")
+        elif char in UNARY_OPERATORS:
             try:
-                answer_ = int(num_before)
-            except ValueError:
-                answer_ = float(num_before)
-            if num_after == "" or num_after == "-":
-                solving_.pop(index)
-
-        num_of_operations = [operator for operator in solving_ if operator in ALL_OPERATORS]
-        # if there are still any more operations repeat the solving process
-        if len(num_of_operations) > 0:
-            solve(solving_)
+                num_ = s.pop()
+                s.push(str(operators[char]["operation"](num_)))
+            except Exception as e:
+                print(f"[Exception] {e}")
+        elif char in SINGLE_OPERATORS:
+            s.push(str(operators[char]["operation"]()))
         else:
-            # if it is not an error the previous answer should be displayed when it is a basic operation
-            answer = answer_
-            if len(str(answer_)) > MAX_ANSWER_LENGTH and answer_ != "Error":
-                solving_label.config(text=str(to_standard_form(answer_)))
-            else:
-                try:
-                    solving_label.config(text=DISPLAY_FORMAT.format(int(str(answer_))))
-                except ValueError:
-                    try:
-                        solving_label.config(text=DISPLAY_FORMAT.format(float(str(answer_))))
-                    except ValueError:
-                        solving_label.config(text=str(answer_))
-                # solving_label.config(text=str(answer_))
-            return answer_
+            s.push(char)
+
+    if s.is_empty():
+        answer_ = "Error"
+    elif s.size() > 1:
+        answer_ = "Error"
+    else:
+        answer_ = s.pop()
+
+    if len(answer_) > MAX_ANSWER_LENGTH:
+        solving_label.config(text=str(to_standard_form(float(answer_))))
+        answer = answer_
+    elif answer_ == "Error":
+        solving_label.config(text=answer_)
+    else:
+        solving_label.config(text=DISPLAY_FORMAT.format(float(str(answer_))))
+        answer = answer_
 
 
 def num_command_holder(n: int):
@@ -439,7 +313,7 @@ def rad_deg_command():
      degree
     :return:
     """
-    global RAD_DEG
+    global RAD_DEG, solving
 
     RAD_DEG += 1
     if RAD_DEG % 2 == 1:
@@ -449,6 +323,11 @@ def rad_deg_command():
 
     with open("rad_deg.txt", "w") as file:
         file.write(str(RAD_DEG))
+
+    solving = SOLVE_LIST.copy()
+    format_list(solving)
+    user_input.config(text="".join(DISPLAY_LIST))
+    solve(solving)
 
 
 def inv_command():
@@ -623,4 +502,5 @@ rad_or_deg_button.grid(row=6, column=5, sticky=W + E)
 pi_button = Button(text="π", height=BUTTON_HEIGHT, width=BUTTON_WIDTH, command=pi_command)
 pi_button.grid(row=6, column=6, sticky=W + E)
 
-window.mainloop()
+if __name__ == "__main__":
+    window.mainloop()
